@@ -127,8 +127,6 @@ class Test(unittest.TestCase):
 def main():
     curve = EllipticCurve(a=gmpy2.mpz(13), b=gmpy2.mpz(32), p=gmpy2.mpz(1009))
     print(curve.calculate_order())
-    curve = EllipticCurve(a=gmpy2.mpz(33), b=gmpy2.mpz(176), p=gmpy2.mpz(1009))
-    print(curve.calculate_order())
     return 0
 
 

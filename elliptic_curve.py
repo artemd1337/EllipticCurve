@@ -34,37 +34,38 @@ class EllipticCurve:
         while gmpy2.legendre(g, self.p) != -1:
             g = gmpy2.mpz_random(state, self.p)
         W = math.ceil(math.pow(self.p, 1 / 4) * math.sqrt(2))  # Параметр giant step
-        c = gmpy2.mod(gmpy2.mul(gmpy2.square(g), self.a), self.p)  # Параметр a искаженной кривой
+        c = gmpy2.mod(gmpy2.mul(gmpy2.powmod(g, 2, self.p), self.a), self.p)  # Параметр a искаженной кривой
         d = gmpy2.mod(gmpy2.mul(gmpy2.powmod(g, 3, self.p), self.b), self.p)  # Параметр b искаженной кривой
         while True:
             x = gmpy2.mpz_random(state, self.p)  # Выбрать случайный x
             sigma = gmpy2.legendre(
                 gmpy2.mod(gmpy2.powmod(x, 3, self.p) + gmpy2.mul(self.a, x) + self.b, self.p),
                 self.p)
-            print(x, g, sigma)
+            #print(x, g, sigma)
             if sigma == 0:  # x^3+ax+b делится на p
                 continue
             elif sigma == 1:  # x^3+ax+b - квадратичный вычет по модулю p -> Кривую не нужно искажать
-                E = self
+                E = EllipticCurve(self.a, self.b, self.p)
             else:  # x^3+ax+b - квадратичный невычет -> исказить кривую и сделать допустимый x
                 E = EllipticCurve(c, d, self.p)
                 x = gmpy2.mod(gmpy2.mul(x, g), self.p)
             y = get_sqrt(gmpy2.mod(gmpy2.powmod(x, 3, E.p) + gmpy2.mul(E.a, x) + E.b, E.p), E.p)
-            print(f"x={x}, y={y}, E.a = {E.a}, E.b = {E.b}")
+            # print(f"x={x}, y={y}, E.a = {E.a}, E.b = {E.b}")
             P = EllipticCurvePoint(x=x, y=y, curve=E)
 
             # Рассчет пересечения двух списков
             A = [(P * (self.p + 1 + baby)) * x for baby in range(0, W)]
+            """
             print("----")
             for baby in range(0, W):
                 P_ = P.double_and_add(self.p + 1 + baby)
                 Pn = P_.double_and_add(x)
                 print(f"P={P}, P*({self.p}+1+{baby})={P_}, P*()*x={Pn}")
             print("----")
-
+            """
             B = [(P * (gmpy2.mul(giant, W))) * x for giant in range(0, W + 1)]
             S = list(set(A) & set(B))
-
+            """
             for elem in A:
                 print(elem)
             print("---")
@@ -74,6 +75,7 @@ class EllipticCurve:
             for elem in S:
                 print(elem)
             print("---")
+            """
             if len(S) != 1:
                 continue
             s = S[0]
@@ -82,11 +84,11 @@ class EllipticCurve:
             print(f"baby_idx={baby_idx}, giant_idx={giant_idx}")
             t = baby_idx + gmpy2.mul(giant_idx, W)
             print(f"E.a = {E.a}, E.b = {E.b}")
-            print(f"case1: t={t}, ord={self.p + 1 + gmpy2.mul(sigma, t)}, sigma={sigma}")
+            print(f"case1: t={t}, ord={self.p + 1 + gmpy2.mul(sigma, t)}, sigma={sigma}, (p + 1 + t)P = {P.ternary_mul(self.p + 1 + t)}")
 
             if not P.ternary_mul(self.p + 1 + t).is_inf:
                 t = baby_idx - gmpy2.mul(giant_idx, W)
-                print(f"case2: t={t}, ord={self.p + 1 + gmpy2.mul(sigma, t)}, sigma={sigma}")
+                print(f"case2: t={t}, ord={self.p + 1 + gmpy2.mul(sigma, t)}, sigma={sigma}, (p + 1 + t)P = {P.ternary_mul(self.p + 1 + t)}")
             return self.p + 1 + gmpy2.mul(sigma, t)
 
     def generate_point(self):
