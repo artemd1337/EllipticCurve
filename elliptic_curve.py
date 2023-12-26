@@ -28,7 +28,6 @@ class EllipticCurve:
                     self.p)
                 for x in range(0, self.p)
             )
-
         state = gmpy2.random_state(hash(gmpy2.random_state()))
         g = gmpy2.mpz_random(state, self.p)  # генерируем случайный квадратичный невычет
         while gmpy2.legendre(g, self.p) != -1:
@@ -41,7 +40,6 @@ class EllipticCurve:
             sigma = gmpy2.legendre(
                 gmpy2.mod(gmpy2.powmod(x, 3, self.p) + gmpy2.mul(self.a, x) + self.b, self.p),
                 self.p)
-            #print(x, g, sigma)
             if sigma == 0:  # x^3+ax+b делится на p
                 continue
             elif sigma == 1:  # x^3+ax+b - квадратичный вычет по модулю p -> Кривую не нужно искажать
@@ -50,45 +48,23 @@ class EllipticCurve:
                 E = EllipticCurve(c, d, self.p)
                 x = gmpy2.mod(gmpy2.mul(x, g), self.p)
             y = get_sqrt(gmpy2.mod(gmpy2.powmod(x, 3, E.p) + gmpy2.mul(E.a, x) + E.b, E.p), E.p)
-            # print(f"x={x}, y={y}, E.a = {E.a}, E.b = {E.b}")
+
             P = EllipticCurvePoint(x=x, y=y, curve=E)
 
             # Рассчет пересечения двух списков
-            A = [(P * (self.p + 1 + baby)) * x for baby in range(0, W)]
-            """
-            print("----")
-            for baby in range(0, W):
-                P_ = P.double_and_add(self.p + 1 + baby)
-                Pn = P_.double_and_add(x)
-                print(f"P={P}, P*({self.p}+1+{baby})={P_}, P*()*x={Pn}")
-            print("----")
-            """
-            B = [(P * (gmpy2.mul(giant, W))) * x for giant in range(0, W + 1)]
+            A = [P.ternary_mul(self.p + 1 + baby).x for baby in range(0, W)]
+            B = [P.ternary_mul(gmpy2.mul(giant, W)).x for giant in range(0, W + 1)]
             S = list(set(A) & set(B))
-            """
-            for elem in A:
-                print(elem)
-            print("---")
-            for elem in B:
-                print(elem)
-            print("---")
-            for elem in S:
-                print(elem)
-            print("---")
-            """
             if len(S) != 1:
                 continue
             s = S[0]
             baby_idx = A.index(s)
             giant_idx = B.index(s)
-            print(f"baby_idx={baby_idx}, giant_idx={giant_idx}")
             t = baby_idx + gmpy2.mul(giant_idx, W)
-            print(f"E.a = {E.a}, E.b = {E.b}")
-            print(f"case1: t={t}, ord={self.p + 1 + gmpy2.mul(sigma, t)}, sigma={sigma}, (p + 1 + t)P = {P.ternary_mul(self.p + 1 + t)}")
 
             if not P.ternary_mul(self.p + 1 + t).is_inf:
                 t = baby_idx - gmpy2.mul(giant_idx, W)
-                print(f"case2: t={t}, ord={self.p + 1 + gmpy2.mul(sigma, t)}, sigma={sigma}, (p + 1 + t)P = {P.ternary_mul(self.p + 1 + t)}")
+
             return self.p + 1 + gmpy2.mul(sigma, t)
 
     def generate_point(self):
